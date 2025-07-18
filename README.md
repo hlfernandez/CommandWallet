@@ -14,7 +14,10 @@ A clean and user-friendly desktop application for managing and executing recurre
   - Configurable fixed mounts through configuration dialog
   - Unified volume mounts field with auto-inference and manual editing
 - **Searchable Dropdowns**: Type to filter Conda environments and Docker images
-- **Real-time Output**: View command execution results in real-time as they execute
+- **Real-time Output**: View command execution results in real-time with timestamps
+- **Monospaced Fonts**: Better readability with larger monospaced fonts throughout the interface
+- **Command Sorting**: Sort commands by name or last execution date
+- **Execution Tracking**: Last execution date is saved and displayed in command list
 - **Auto-save**: All changes in the GUI are automatically saved to configuration files
 - **Persistent Storage**: Commands and configuration automatically saved in `~/.command-wallet/`
 - **Threading**: Non-blocking command execution to keep the GUI responsive
@@ -23,11 +26,11 @@ A clean and user-friendly desktop application for managing and executing recurre
 ## Screenshots
 
 The application features:
-- **Left Panel**: Command selection and management (Add/Delete buttons)
-- **Right Panel**: Command editor with name, command input, and execution options
+- **Left Panel**: Command selection with sorting options (by name/date) and management buttons
+- **Right Panel**: Command editor with compact layout and monospaced input fields
 - **Execution Options**: Checkboxes for Conda/Docker with searchable dropdown menus
 - **Volume Mounts**: Unified field for Docker volume mounts with auto-inference
-- **Buttons**: Run Command and Config buttons for easy access
+- **Output Area**: Real-time command output with starting timestamp and monospaced font
 - **Output Area**: Scrollable text area showing command execution results
 
 ## Requirements
@@ -99,8 +102,10 @@ Click the "Config" button to access:
 ### Managing Commands
 
 - **Select**: Click on a command in the left panel to load it
+- **Sort**: Use "Sort by Name" or "Sort by Date" buttons to organize your commands
 - **Edit**: Modify the name, command, or execution options
 - **Delete**: Select a command and click "Delete"
+- **Execution History**: Commands show when they were last executed and can be sorted by date
 - **Auto-save**: Changes are automatically saved
 
 ## Data Storage

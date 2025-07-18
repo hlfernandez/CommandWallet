@@ -6,6 +6,8 @@ import json
 import os
 import platform
 import re
+import sys
+from datetime import datetime
 from typing import Dict, List, Optional
 
 
@@ -61,6 +63,10 @@ class CommandWallet:
             self.load_command(first_id)
     
     def create_widgets(self):
+        # Configure fonts
+        self.default_font = ("Consolas", 12) if sys.platform.startswith('win') else ("DejaVu Sans Mono", 12)
+        self.mono_font = ("Consolas", 11) if sys.platform.startswith('win') else ("DejaVu Sans Mono", 11)
+        
         # Main container
         main_frame = ttk.Frame(self.root, padding="10")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
@@ -81,19 +87,28 @@ class CommandWallet:
         left_frame = ttk.Frame(parent)
         left_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=(0, 10))
         left_frame.columnconfigure(0, weight=1)
-        left_frame.rowconfigure(1, weight=1)
+        left_frame.rowconfigure(2, weight=1)
         
         # Commands list label
-        ttk.Label(left_frame, text="Commands", font=("Arial", 12, "bold")).grid(row=0, column=0, pady=(0, 10))
+        ttk.Label(left_frame, text="Commands", font=self.default_font).grid(row=0, column=0, pady=(0, 5))
+        
+        # Sorting buttons frame
+        sort_frame = ttk.Frame(left_frame)
+        sort_frame.grid(row=1, column=0, pady=(0, 5), sticky=(tk.W, tk.E))
+        sort_frame.columnconfigure(0, weight=1)
+        sort_frame.columnconfigure(1, weight=1)
+        
+        ttk.Button(sort_frame, text="Sort by Name", command=self.sort_by_name).grid(row=0, column=0, padx=(0, 2), sticky=(tk.W, tk.E))
+        ttk.Button(sort_frame, text="Sort by Date", command=self.sort_by_date).grid(row=0, column=1, padx=(2, 0), sticky=(tk.W, tk.E))
         
         # Commands listbox
-        self.commands_listbox = tk.Listbox(left_frame, width=25)
-        self.commands_listbox.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        self.commands_listbox = tk.Listbox(left_frame, width=25, font=self.mono_font)
+        self.commands_listbox.grid(row=2, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         self.commands_listbox.bind('<<ListboxSelect>>', self.on_command_select)
         
-        # Buttons frame
+        # Add/Delete buttons frame
         buttons_frame = ttk.Frame(left_frame)
-        buttons_frame.grid(row=2, column=0, pady=(10, 0), sticky=(tk.W, tk.E))
+        buttons_frame.grid(row=3, column=0, pady=(10, 0), sticky=(tk.W, tk.E))
         buttons_frame.columnconfigure(0, weight=1)
         buttons_frame.columnconfigure(1, weight=1)
         
@@ -110,15 +125,15 @@ class CommandWallet:
         right_frame.rowconfigure(4, weight=1)
         
         # Command name
-        ttk.Label(right_frame, text="Command Name:").grid(row=0, column=0, sticky=tk.W, pady=(0, 5))
-        self.name_entry = ttk.Entry(right_frame, width=50)
-        self.name_entry.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=(0, 5))
+        ttk.Label(right_frame, text="Name:", font=self.default_font).grid(row=0, column=0, sticky=tk.W, pady=(0, 2))
+        self.name_entry = ttk.Entry(right_frame, width=50, font=self.mono_font)
+        self.name_entry.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=(0, 2))
         self.name_entry.bind('<KeyRelease>', self.on_name_change)
         
         # Command input
-        ttk.Label(right_frame, text="Command:").grid(row=1, column=0, sticky=tk.W, pady=(0, 5))
-        self.command_entry = ttk.Entry(right_frame, width=50)
-        self.command_entry.grid(row=1, column=1, sticky=(tk.W, tk.E), pady=(0, 5))
+        ttk.Label(right_frame, text="Command:", font=self.default_font).grid(row=1, column=0, sticky=tk.W, pady=(5, 2))
+        self.command_entry = ttk.Entry(right_frame, width=50, font=self.mono_font)
+        self.command_entry.grid(row=1, column=1, sticky=(tk.W, tk.E), pady=(5, 2))
         self.command_entry.bind('<KeyRelease>', self.on_command_change)
         
         # Execution options frame
@@ -186,7 +201,7 @@ class CommandWallet:
         output_frame.columnconfigure(0, weight=1)
         output_frame.rowconfigure(0, weight=1)
         
-        self.output_text = scrolledtext.ScrolledText(output_frame, wrap=tk.WORD, state=tk.DISABLED)
+        self.output_text = scrolledtext.ScrolledText(output_frame, wrap=tk.WORD, state=tk.DISABLED, font=self.mono_font)
         self.output_text.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         
         # Configure column weights
@@ -270,7 +285,8 @@ class CommandWallet:
             'conda_env': '',
             'use_docker': False,
             'docker_image': '',
-            'volume_mounts': ''
+            'volume_mounts': '',
+            'last_execution': None
         }
         self.update_commands_list()
         self.load_command(command_id)
@@ -285,12 +301,35 @@ class CommandWallet:
                 self.clear_form()
                 self.save_commands()
     
-    def update_commands_list(self):
+    def update_commands_list(self, sort_by=None):
         """Update the commands listbox"""
         self.commands_listbox.delete(0, tk.END)
-        for command_id, command_data in self.commands.items():
+        
+        if sort_by == 'name':
+            # Sort by name alphabetically
+            sorted_commands = sorted(self.commands.items(), key=lambda item: item[1]['name'].lower())
+        elif sort_by == 'date':
+            # Sort by last execution date (most recent first), commands without date go to end
+            sorted_commands = sorted(
+                self.commands.items(), 
+                key=lambda item: item[1].get('last_execution', '1970-01-01 00:00:00'),
+                reverse=True
+            )
+        else:
+            # Default order (by command ID)
+            sorted_commands = self.commands.items()
+        
+        for command_id, command_data in sorted_commands:
             self.commands_listbox.insert(tk.END, command_data['name'])
     
+    def sort_by_name(self):
+        """Sort commands by name"""
+        self.update_commands_list(sort_by='name')
+    
+    def sort_by_date(self):
+        """Sort commands by last execution date"""
+        self.update_commands_list(sort_by='date')
+
     def on_command_select(self, event):
         """Handle command selection"""
         selection = event.widget.curselection()
@@ -392,16 +431,23 @@ class CommandWallet:
             messagebox.showwarning("Empty Command", "Please enter a command to run.")
             return
         
-        # Clear output
+        # Save execution timestamp
+        execution_time = datetime.now()
+        timestamp_str = execution_time.strftime("%d/%m/%Y-%H:%M:%S")
+        self.commands[self.current_command_id]['last_execution'] = execution_time.strftime("%Y-%m-%d %H:%M:%S")
+        self.save_commands()
+        
+        # Prepare command based on execution options
+        final_command = self.prepare_command(command_data)
+        
+        # Clear output and add starting message
         self.output_text.config(state=tk.NORMAL)
         self.output_text.delete(1.0, tk.END)
+        self.output_text.insert(tk.END, f"Started command '{final_command}' at {timestamp_str}\n\n")
         self.output_text.config(state=tk.DISABLED)
         
         # Disable run button
         self.run_button.config(state="disabled")
-        
-        # Prepare command based on execution options
-        final_command = self.prepare_command(command_data)
         
         # Run command in separate thread
         thread = threading.Thread(target=self.execute_command, args=(final_command,))
@@ -684,6 +730,10 @@ class CommandWallet:
             # Ensure volume_mounts field exists
             if 'volume_mounts' not in command_data:
                 command_data['volume_mounts'] = ''
+            
+            # Ensure last_execution field exists
+            if 'last_execution' not in command_data:
+                command_data['last_execution'] = None
         
         # Save migrated data
         self.save_commands()

@@ -13,14 +13,16 @@ This is a Python desktop application called CommandWallet that provides a GUI fo
 - `~/.command-wallet/config.json`: Application configuration (created at runtime)
 
 ## Key Features
-- Clean tkinter-based GUI with left panel for command selection
-- Command editor with name, command input, and execution options
+- Clean tkinter-based GUI with left panel for command selection and sorting options
+- Command editor with compact layout using monospaced fonts
 - Support for running commands in Conda environments with searchable dropdowns
 - Support for running commands in Docker containers with:
   - Automatic path inference from command text
   - Configurable fixed mounts through configuration dialog
   - Unified volume mounts field for manual editing
-- Real-time output display
+- Real-time output display with execution timestamps and monospaced font
+- Command execution history tracking with last execution date storage
+- Command sorting by name or last execution date
 - Persistent command storage in JSON format with auto-save on all changes
 - Full-screen application startup
 - Auto-save functionality for all GUI changes (name, command, execution options, volume mounts)
