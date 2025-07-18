@@ -1,4 +1,3 @@
-from logging import root
 import customtkinter as ctk
 from tkinter import messagebox
 import subprocess
@@ -214,9 +213,124 @@ class CommandWallet:
         self.output_text = ctk.CTkTextbox(output_frame, wrap="word", state="disabled", font=ctk.CTkFont(family="Consolas", size=11))
         self.output_text.grid(row=1, column=0, sticky="nsew", padx=10, pady=(0, 10))
         
+        # Add right-click context menu to output text
+        self.create_output_context_menu()
+        
         # Configure column weights
         right_frame.columnconfigure(1, weight=1)
         right_frame.rowconfigure(4, weight=1)
+    
+    def create_output_context_menu(self):
+        """Create right-click context menu for output text area"""
+        # Import tkinter for Menu (CustomTkinter doesn't have context menus yet)
+        import tkinter as tk
+        
+        # Create context menu
+        self.output_menu = tk.Menu(self.root, tearoff=0)
+        self.output_menu.add_command(label="Copy All", command=self.copy_all_output)
+        self.output_menu.add_command(label="Copy Selection", command=self.copy_selected_output)
+        self.output_menu.add_separator()
+        self.output_menu.add_command(label="Clear Output", command=self.clear_output)
+        
+        # Bind right-click to show menu
+        self.output_text.bind("<Button-3>", self.show_output_context_menu)  # Right-click
+        
+        # Also bind Ctrl+C for copy selection
+        self.output_text.bind("<Control-c>", lambda e: self.copy_selected_output())
+        self.output_text.bind("<Control-a>", lambda e: self.select_all_output())
+    
+    def show_output_context_menu(self, event):
+        """Show context menu at cursor position"""
+        try:
+            # Check if there's a selection to enable/disable copy selection
+            if self.output_text.tag_ranges("sel"):
+                self.output_menu.entryconfig("Copy Selection", state="normal")
+            else:
+                self.output_menu.entryconfig("Copy Selection", state="disabled")
+            
+            # Check if there's any text to enable/disable copy all
+            if self.output_text.get("1.0", "end-1c").strip():
+                self.output_menu.entryconfig("Copy All", state="normal")
+                self.output_menu.entryconfig("Clear Output", state="normal")
+            else:
+                self.output_menu.entryconfig("Copy All", state="disabled")
+                self.output_menu.entryconfig("Clear Output", state="disabled")
+            
+            # Show menu at cursor position
+            self.output_menu.post(event.x_root, event.y_root)
+        except Exception as e:
+            print(f"Error showing context menu: {e}")
+        finally:
+            # Hide menu after a while if not interacted with
+            self.output_menu.grab_release()
+    
+    def copy_all_output(self):
+        """Copy all output text to clipboard"""
+        try:
+            text = self.output_text.get("1.0", "end-1c")
+            if text.strip():
+                self.root.clipboard_clear()
+                self.root.clipboard_append(text)
+                self.root.update()  # Required for clipboard to work properly
+                # Show brief status message
+                self.show_status_message("All output copied to clipboard")
+        except Exception as e:
+            print(f"Error copying all output: {e}")
+    
+    def copy_selected_output(self):
+        """Copy selected output text to clipboard"""
+        try:
+            if self.output_text.tag_ranges("sel"):
+                selected_text = self.output_text.get("sel.first", "sel.last")
+                if selected_text:
+                    self.root.clipboard_clear()
+                    self.root.clipboard_append(selected_text)
+                    self.root.update()  # Required for clipboard to work properly
+                    # Show brief status message
+                    self.show_status_message("Selected text copied to clipboard")
+            else:
+                self.show_status_message("No text selected")
+        except Exception as e:
+            print(f"Error copying selected output: {e}")
+    
+    def show_status_message(self, message):
+        """Show a brief status message in the output area"""
+        try:
+            # Temporarily enable the text widget
+            self.output_text.configure(state="normal")
+            
+            # Add status message with a timestamp
+            current_text = self.output_text.get("1.0", "end-1c")
+            if current_text and not current_text.endswith('\n'):
+                self.output_text.insert("end", "\n")
+            
+            timestamp = datetime.now().strftime("%H:%M:%S")
+            status_line = f"[{timestamp}] {message}\n"
+            self.output_text.insert("end", status_line)
+            self.output_text.see("end")
+            
+            # Disable the text widget again
+            self.output_text.configure(state="disabled")
+        except Exception as e:
+            print(f"Error showing status message: {e}")
+    
+    def select_all_output(self):
+        """Select all text in output area"""
+        try:
+            self.output_text.tag_add("sel", "1.0", "end")
+            return "break"  # Prevent default behavior
+        except Exception as e:
+            print(f"Error selecting all output: {e}")
+    
+    def clear_output(self):
+        """Clear all output text"""
+        try:
+            self.output_text.configure(state="normal")
+            self.output_text.delete("1.0", "end")
+            self.output_text.configure(state="disabled")
+            # Note: We can't show a status message here since we just cleared everything
+        except Exception as e:
+            print(f"Error clearing output: {e}")
     
     def get_conda_environments(self) -> List[str]:
         """Get list of available conda environments"""
@@ -815,13 +929,6 @@ class CommandWallet:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save config: {str(e)}")
 
-    def show_config_dialog(self):
-        """Show configuration dialog"""
-        config_window = ctk.CTkToplevel(self.root)
-        config_window.title("Configuration")
-        config_window.geometry("500x400")
-        config_window.transient(self.root)
-        
     def show_config_dialog(self):
         """Show configuration dialog"""
         config_window = ctk.CTkToplevel(self.root)
