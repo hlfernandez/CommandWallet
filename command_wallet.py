@@ -1,5 +1,6 @@
-import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext
+from logging import root
+import customtkinter as ctk
+from tkinter import messagebox
 import subprocess
 import threading
 import json
@@ -28,6 +29,10 @@ class CommandWallet:
                 self.root.geometry("1200x800")
 
     def __init__(self, root):
+        # Set appearance mode and color theme
+        ctk.set_appearance_mode("dark")  # Modes: "System" (standard), "Dark", "Light"
+        ctk.set_default_color_theme("blue")  # Themes: "blue" (standard), "green", "dark-blue"
+
         self.root = root
         self.root.title("CommandWallet")
         self.maximize_window()
@@ -63,19 +68,16 @@ class CommandWallet:
             self.load_command(first_id)
     
     def create_widgets(self):
-        # Configure fonts
-        self.default_font = ("Consolas", 12) if sys.platform.startswith('win') else ("DejaVu Sans Mono", 12)
-        self.mono_font = ("Consolas", 11) if sys.platform.startswith('win') else ("DejaVu Sans Mono", 11)
+        # Configure fonts - CustomTkinter handles fonts differently
+        self.font_size = 14
         
         # Main container
-        main_frame = ttk.Frame(self.root, padding="10")
-        main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        main_frame = ctk.CTkFrame(self.root)
+        main_frame.pack(fill="both", expand=True, padx=10, pady=10)
         
         # Configure grid weights
-        self.root.columnconfigure(0, weight=1)
-        self.root.rowconfigure(0, weight=1)
-        main_frame.columnconfigure(1, weight=1)
-        main_frame.rowconfigure(0, weight=1)
+        main_frame.grid_columnconfigure(1, weight=1)
+        main_frame.grid_rowconfigure(0, weight=1)
         
         # Left panel for commands list
         self.create_left_panel(main_frame)
@@ -84,128 +86,133 @@ class CommandWallet:
         self.create_right_panel(main_frame)
     
     def create_left_panel(self, parent):
-        left_frame = ttk.Frame(parent)
-        left_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=(0, 10))
-        left_frame.columnconfigure(0, weight=1)
-        left_frame.rowconfigure(2, weight=1)
+        left_frame = ctk.CTkFrame(parent)
+        left_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 10), pady=10)
+        left_frame.grid_columnconfigure(0, weight=1)
+        left_frame.grid_rowconfigure(2, weight=1)
         
         # Commands list label
-        ttk.Label(left_frame, text="Commands", font=self.default_font).grid(row=0, column=0, pady=(0, 5))
+        ctk.CTkLabel(left_frame, text="Commands", font=ctk.CTkFont(size=16, weight="bold")).grid(row=0, column=0, pady=(10, 5), padx=10)
         
         # Sorting buttons frame
-        sort_frame = ttk.Frame(left_frame)
-        sort_frame.grid(row=1, column=0, pady=(0, 5), sticky=(tk.W, tk.E))
-        sort_frame.columnconfigure(0, weight=1)
-        sort_frame.columnconfigure(1, weight=1)
+        sort_frame = ctk.CTkFrame(left_frame)
+        sort_frame.grid(row=1, column=0, pady=(0, 10), padx=10, sticky="ew")
+        sort_frame.grid_columnconfigure(0, weight=1)
+        sort_frame.grid_columnconfigure(1, weight=1)
         
-        ttk.Button(sort_frame, text="Sort by Name", command=self.sort_by_name).grid(row=0, column=0, padx=(0, 2), sticky=(tk.W, tk.E))
-        ttk.Button(sort_frame, text="Sort by Date", command=self.sort_by_date).grid(row=0, column=1, padx=(2, 0), sticky=(tk.W, tk.E))
+        ctk.CTkButton(sort_frame, text="Sort by Name", command=self.sort_by_name).grid(row=0, column=0, padx=(10, 5), pady=10, sticky="ew")
+        ctk.CTkButton(sort_frame, text="Sort by Date", command=self.sort_by_date).grid(row=0, column=1, padx=(5, 10), pady=10, sticky="ew")
         
-        # Commands listbox
-        self.commands_listbox = tk.Listbox(left_frame, width=25, font=self.mono_font)
-        self.commands_listbox.grid(row=2, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
-        self.commands_listbox.bind('<<ListboxSelect>>', self.on_command_select)
+        # Commands listbox - CustomTkinter doesn't have Listbox, so we'll use CTkScrollableFrame
+        self.commands_frame = ctk.CTkScrollableFrame(left_frame, label_text="Commands List")
+        self.commands_frame.grid(row=2, column=0, sticky="nsew", padx=10, pady=(0, 10))
+        self.commands_frame.grid_columnconfigure(0, weight=1)
         
-        # Add tooltip for showing last execution dates
-        self.command_tooltip = ToolTip(self.commands_listbox, self.get_command_tooltip_text)
+        # Store command buttons for later reference
+        self.command_buttons = []
         
         # Add/Delete buttons frame
-        buttons_frame = ttk.Frame(left_frame)
-        buttons_frame.grid(row=3, column=0, pady=(10, 0), sticky=(tk.W, tk.E))
-        buttons_frame.columnconfigure(0, weight=1)
-        buttons_frame.columnconfigure(1, weight=1)
+        buttons_frame = ctk.CTkFrame(left_frame)
+        buttons_frame.grid(row=3, column=0, pady=(0, 10), padx=10, sticky="ew")
+        buttons_frame.grid_columnconfigure(0, weight=1)
+        buttons_frame.grid_columnconfigure(1, weight=1)
         
         # Add and Delete buttons
-        ttk.Button(buttons_frame, text="Add", command=self.add_command).grid(row=0, column=0, padx=(0, 5), sticky=(tk.W, tk.E))
-        ttk.Button(buttons_frame, text="Delete", command=self.delete_command).grid(row=0, column=1, padx=(5, 0), sticky=(tk.W, tk.E))
+        ctk.CTkButton(buttons_frame, text="Add", command=self.add_command).grid(row=0, column=0, padx=(10, 5), pady=10, sticky="ew")
+        ctk.CTkButton(buttons_frame, text="Delete", command=self.delete_command).grid(row=0, column=1, padx=(5, 10), pady=10, sticky="ew")
         
         self.update_commands_list()
     
     def create_right_panel(self, parent):
-        right_frame = ttk.Frame(parent)
-        right_frame.grid(row=0, column=1, sticky=(tk.W, tk.E, tk.N, tk.S))
-        right_frame.columnconfigure(0, weight=1)
-        right_frame.rowconfigure(4, weight=1)
+        right_frame = ctk.CTkFrame(parent)
+        right_frame.grid(row=0, column=1, sticky="nsew", padx=(0, 10), pady=10)
+        right_frame.grid_columnconfigure(1, weight=1)
+        right_frame.grid_rowconfigure(4, weight=1)
         
         # Command name
-        ttk.Label(right_frame, text="Name:", font=self.default_font).grid(row=0, column=0, sticky=tk.W, pady=(0, 2))
-        self.name_entry = ttk.Entry(right_frame, width=50, font=self.mono_font)
-        self.name_entry.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=(0, 2))
+        ctk.CTkLabel(right_frame, text="Name:", font=ctk.CTkFont(size=14)).grid(row=0, column=0, sticky="w", pady=(10, 5), padx=(10, 5))
+        self.name_entry = ctk.CTkEntry(right_frame, font=ctk.CTkFont(family="Consolas", size=12))
+        self.name_entry.grid(row=0, column=1, sticky="ew", pady=(10, 5), padx=(0, 10))
         self.name_entry.bind('<KeyRelease>', self.on_name_change)
         
         # Command input
-        ttk.Label(right_frame, text="Command:", font=self.default_font).grid(row=1, column=0, sticky=tk.W, pady=(5, 2))
-        self.command_entry = ttk.Entry(right_frame, width=50, font=self.mono_font)
-        self.command_entry.grid(row=1, column=1, sticky=(tk.W, tk.E), pady=(5, 2))
+        ctk.CTkLabel(right_frame, text="Command:", font=ctk.CTkFont(size=14)).grid(row=1, column=0, sticky="w", pady=(5, 5), padx=(10, 5))
+        self.command_entry = ctk.CTkEntry(right_frame, font=ctk.CTkFont(family="Consolas", size=12))
+        self.command_entry.grid(row=1, column=1, sticky="ew", pady=(5, 5), padx=(0, 10))
         self.command_entry.bind('<KeyRelease>', self.on_command_change)
         
         # Execution options frame
-        options_frame = ttk.LabelFrame(right_frame, text="Execution Options", padding="10")
-        options_frame.grid(row=2, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(10, 0))
-        options_frame.columnconfigure(1, weight=1)
+        options_frame = ctk.CTkFrame(right_frame)
+        options_frame.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(10, 5), padx=10)
+        options_frame.grid_columnconfigure(1, weight=1)
+        
+        # Add label for the options section
+        ctk.CTkLabel(options_frame, text="Execution Options", font=ctk.CTkFont(size=14, weight="bold")).grid(row=0, column=0, columnspan=2, pady=(10, 10), padx=10, sticky="w")
         
         # Conda environment option
-        self.conda_var = tk.BooleanVar()
-        self.conda_checkbox = ttk.Checkbutton(options_frame, text="Run in Conda Environment", 
+        self.conda_var = ctk.BooleanVar()
+        self.conda_checkbox = ctk.CTkCheckBox(options_frame, text="Run in Conda Environment", 
                                              variable=self.conda_var, command=self.toggle_conda)
-        self.conda_checkbox.grid(row=0, column=0, sticky=tk.W, pady=(0, 5))
+        self.conda_checkbox.grid(row=1, column=0, sticky="w", pady=(0, 10), padx=(10, 10))
         
-        # Create searchable combobox for conda environments
-        conda_frame = ttk.Frame(options_frame)
-        conda_frame.grid(row=0, column=1, sticky=(tk.W, tk.E), padx=(10, 0), pady=(0, 5))
-        conda_frame.columnconfigure(0, weight=1)
+        # Create frame for conda environments combo
+        conda_frame = ctk.CTkFrame(options_frame)
+        conda_frame.grid(row=1, column=1, sticky="ew", padx=(0, 10), pady=(0, 10))
+        conda_frame.grid_columnconfigure(0, weight=1)
         
-        self.conda_combo = ttk.Combobox(conda_frame, values=self.conda_environments, state="disabled")
-        self.conda_combo.grid(row=0, column=0, sticky=(tk.W, tk.E))
+        self.conda_combo = ctk.CTkComboBox(conda_frame, values=self.conda_environments, state="disabled")
+        self.conda_combo.grid(row=0, column=0, sticky="ew", padx=10, pady=10)
         self.conda_combo.bind('<KeyRelease>', self.filter_conda_environments)
         self.conda_combo.bind('<Button-1>', self.on_conda_click)
         self.conda_combo.bind('<<ComboboxSelected>>', self.on_conda_selected)
-        self.conda_combo.bind('<FocusIn>', lambda e: self.conda_combo.select_range(0, tk.END))
         self.conda_combo.bind('<FocusOut>', self.on_conda_change)
         
         # Docker container option
-        self.docker_var = tk.BooleanVar()
-        self.docker_checkbox = ttk.Checkbutton(options_frame, text="Run in Docker Container", 
+        self.docker_var = ctk.BooleanVar()
+        self.docker_checkbox = ctk.CTkCheckBox(options_frame, text="Run in Docker Container", 
                                               variable=self.docker_var, command=self.toggle_docker)
-        self.docker_checkbox.grid(row=1, column=0, sticky=tk.W, pady=(0, 5))
+        self.docker_checkbox.grid(row=2, column=0, sticky="w", pady=(0, 10), padx=(10, 10))
         
-        # Create searchable combobox for docker images
-        docker_frame = ttk.Frame(options_frame)
-        docker_frame.grid(row=1, column=1, sticky=(tk.W, tk.E), padx=(10, 0), pady=(0, 5))
-        docker_frame.columnconfigure(0, weight=1)
+        # Create frame for docker images combo
+        docker_frame = ctk.CTkFrame(options_frame)
+        docker_frame.grid(row=2, column=1, sticky="ew", padx=(0, 10), pady=(0, 10))
+        docker_frame.grid_columnconfigure(0, weight=1)
         
-        self.docker_combo = ttk.Combobox(docker_frame, values=self.docker_images, state="disabled")
-        self.docker_combo.grid(row=0, column=0, sticky=(tk.W, tk.E))
+        self.docker_combo = ctk.CTkComboBox(docker_frame, values=self.docker_images, state="disabled")
+        self.docker_combo.grid(row=0, column=0, sticky="ew", padx=10, pady=10)
         self.docker_combo.bind('<KeyRelease>', self.filter_docker_images)
         self.docker_combo.bind('<Button-1>', self.on_docker_click)
         self.docker_combo.bind('<<ComboboxSelected>>', self.on_docker_selected)
-        self.docker_combo.bind('<FocusIn>', lambda e: self.docker_combo.select_range(0, tk.END))
         self.docker_combo.bind('<FocusOut>', self.on_docker_change)
         
         # Volume mounts
-        ttk.Label(options_frame, text="Volume Mounts:").grid(row=2, column=0, sticky=tk.W, pady=(5, 0))
-        self.volume_mounts_entry = ttk.Entry(options_frame, state="disabled")
-        self.volume_mounts_entry.grid(row=2, column=1, sticky=(tk.W, tk.E), padx=(10, 0), pady=(5, 0))
+        ctk.CTkLabel(options_frame, text="Volume Mounts:", font=ctk.CTkFont(size=12)).grid(row=3, column=0, sticky="w", pady=(5, 10), padx=(10, 10))
+        self.volume_mounts_entry = ctk.CTkEntry(options_frame, state="disabled")
+        self.volume_mounts_entry.grid(row=3, column=1, sticky="ew", padx=(0, 10), pady=(5, 10))
         self.volume_mounts_entry.bind('<KeyRelease>', self.on_volume_mounts_change)
         self.volume_mounts_entry.bind('<FocusOut>', self.on_volume_mounts_change)
         
         # Buttons frame (Run Command and Config)
-        buttons_frame = ttk.Frame(right_frame)
-        buttons_frame.grid(row=3, column=0, columnspan=3, pady=(20, 10))
+        buttons_frame = ctk.CTkFrame(right_frame)
+        buttons_frame.grid(row=3, column=0, columnspan=2, pady=(20, 10), padx=10)
         
-        self.run_button = ttk.Button(buttons_frame, text="Run Command", command=self.run_command)
-        self.run_button.pack(side=tk.LEFT, padx=(0, 10))
+        self.run_button = ctk.CTkButton(buttons_frame, text="Run Command", command=self.run_command)
+        self.run_button.pack(side="left", padx=(10, 10), pady=10)
         
-        ttk.Button(buttons_frame, text="Config", command=self.show_config_dialog).pack(side=tk.LEFT)
+        ctk.CTkButton(buttons_frame, text="Config", command=self.show_config_dialog).pack(side="left", padx=(0, 10), pady=10)
         
         # Output area
-        output_frame = ttk.LabelFrame(right_frame, text="Output", padding="5")
-        output_frame.grid(row=4, column=0, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), pady=(5, 0))
-        output_frame.columnconfigure(0, weight=1)
-        output_frame.rowconfigure(0, weight=1)
+        output_frame = ctk.CTkFrame(right_frame)
+        output_frame.grid(row=4, column=0, columnspan=2, sticky="nsew", pady=(5, 10), padx=10)
+        output_frame.grid_columnconfigure(0, weight=1)
+        output_frame.grid_rowconfigure(1, weight=1)
         
-        self.output_text = scrolledtext.ScrolledText(output_frame, wrap=tk.WORD, state=tk.DISABLED, font=self.mono_font)
-        self.output_text.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        # Output label
+        ctk.CTkLabel(output_frame, text="Output", font=ctk.CTkFont(size=14, weight="bold")).grid(row=0, column=0, sticky="w", pady=(10, 5), padx=10)
+        
+        # Output text area - CustomTkinter doesn't have ScrolledText, so we'll use CTkTextbox
+        self.output_text = ctk.CTkTextbox(output_frame, wrap="word", state="disabled", font=ctk.CTkFont(family="Consolas", size=11))
+        self.output_text.grid(row=1, column=0, sticky="nsew", padx=10, pady=(0, 10))
         
         # Configure column weights
         right_frame.columnconfigure(1, weight=1)
@@ -247,13 +254,13 @@ class CommandWallet:
     def toggle_conda(self):
         """Handle conda checkbox toggle"""
         if self.conda_var.get():
-            self.conda_combo.config(state="normal")
+            self.conda_combo.configure(state="normal")
             self.docker_var.set(False)
-            self.docker_combo.config(state="disabled")
-            self.volume_mounts_entry.config(state="disabled")
-            self.volume_mounts_entry.delete(0, tk.END)
+            self.docker_combo.configure(state="disabled")
+            self.volume_mounts_entry.configure(state="disabled")
+            self.volume_mounts_entry.delete(0, "end")
         else:
-            self.conda_combo.config(state="disabled")
+            self.conda_combo.configure(state="disabled")
             self.conda_combo.set('')
         
         if self.current_command_id:
@@ -262,18 +269,18 @@ class CommandWallet:
     def toggle_docker(self):
         """Handle docker checkbox toggle"""
         if self.docker_var.get():
-            self.docker_combo.config(state="normal")
-            self.volume_mounts_entry.config(state="normal")
+            self.docker_combo.configure(state="normal")
+            self.volume_mounts_entry.configure(state="normal")
             self.conda_var.set(False)
-            self.conda_combo.config(state="disabled")
+            self.conda_combo.configure(state="disabled")
             self.conda_combo.set('')
             # Update volume mounts when Docker is enabled
             self.update_volume_mounts()
         else:
-            self.docker_combo.config(state="disabled")
+            self.docker_combo.configure(state="disabled")
             self.docker_combo.set('')
-            self.volume_mounts_entry.config(state="disabled")
-            self.volume_mounts_entry.delete(0, tk.END)
+            self.volume_mounts_entry.configure(state="disabled")
+            self.volume_mounts_entry.delete(0, "end")
         
         if self.current_command_id:
             self.save_command_data()
@@ -305,8 +312,11 @@ class CommandWallet:
                 self.save_commands()
     
     def update_commands_list(self, sort_by=None):
-        """Update the commands listbox"""
-        self.commands_listbox.delete(0, tk.END)
+        """Update the commands list in the scrollable frame"""
+        # Clear existing buttons
+        for button in self.command_buttons:
+            button.destroy()
+        self.command_buttons.clear()
         
         if sort_by == 'name':
             # Sort by name alphabetically
@@ -328,8 +338,49 @@ class CommandWallet:
             # Default order (by command ID)
             sorted_commands = self.commands.items()
         
-        for command_id, command_data in sorted_commands:
-            self.commands_listbox.insert(tk.END, command_data['name'])
+        for i, (command_id, command_data) in enumerate(sorted_commands):
+            button = ctk.CTkButton(
+                self.commands_frame,
+                text=command_data['name'],
+                command=lambda cid=command_id: self.load_command(cid),
+                anchor="w"
+            )
+            button.grid(row=i, column=0, sticky="ew", padx=5, pady=2)
+            self.command_buttons.append(button)
+            
+            # Add tooltip
+            self.create_tooltip(button, command_data)
+    
+    def create_tooltip(self, widget, command_data):
+        """Create tooltip for command button showing last execution date"""
+        def on_enter(event):
+            last_exec = command_data.get('last_execution')
+            if last_exec:
+                try:
+                    dt = datetime.strptime(last_exec, "%Y-%m-%d %H:%M:%S")
+                    formatted_date = dt.strftime("%d/%m/%Y %H:%M:%S")
+                    tooltip_text = f"Last executed: {formatted_date}"
+                except:
+                    tooltip_text = f"Last executed: {last_exec}"
+            else:
+                tooltip_text = "Never executed"
+            
+            # Create tooltip window
+            self.tooltip = ctk.CTkToplevel(widget)
+            self.tooltip.wm_overrideredirect(True)
+            self.tooltip.wm_geometry(f"+{event.x_root+10}+{event.y_root+10}")
+            
+            label = ctk.CTkLabel(self.tooltip, text=tooltip_text, 
+                               font=ctk.CTkFont(size=10))
+            label.pack()
+        
+        def on_leave(event):
+            if hasattr(self, 'tooltip'):
+                self.tooltip.destroy()
+                delattr(self, 'tooltip')
+        
+        widget.bind("<Enter>", on_enter)
+        widget.bind("<Leave>", on_leave)
     
     def sort_by_name(self):
         """Sort commands by name"""
@@ -339,14 +390,6 @@ class CommandWallet:
         """Sort commands by last execution date"""
         self.update_commands_list(sort_by='date')
 
-    def on_command_select(self, event):
-        """Handle command selection"""
-        selection = event.widget.curselection()
-        if selection:
-            index = selection[0]
-            command_id = list(self.commands.keys())[index]
-            self.load_command(command_id)
-    
     def load_command(self, command_id):
         """Load command data into the form"""
         if command_id in self.commands:
@@ -354,38 +397,38 @@ class CommandWallet:
             command_data = self.commands[command_id]
             
             # Load basic data
-            self.name_entry.delete(0, tk.END)
+            self.name_entry.delete(0, "end")
             self.name_entry.insert(0, command_data['name'])
             
-            self.command_entry.delete(0, tk.END)
+            self.command_entry.delete(0, "end")
             self.command_entry.insert(0, command_data['command'])
             
             # Load conda settings
             self.conda_var.set(command_data['use_conda'])
             if command_data['use_conda']:
-                self.conda_combo.config(state="normal")
+                self.conda_combo.configure(state="normal")
                 self.conda_combo.set(command_data['conda_env'])
-                self.volume_mounts_entry.config(state="disabled")
+                self.volume_mounts_entry.configure(state="disabled")
             else:
-                self.conda_combo.config(state="disabled")
+                self.conda_combo.configure(state="disabled")
                 self.conda_combo.set('')
             
             # Load docker settings
             self.docker_var.set(command_data['use_docker'])
             if command_data['use_docker']:
-                self.docker_combo.config(state="normal")
+                self.docker_combo.configure(state="normal")
                 self.docker_combo.set(command_data['docker_image'])
-                self.volume_mounts_entry.config(state="normal")
+                self.volume_mounts_entry.configure(state="normal")
                 
                 # Load volume mounts (backward compatibility)
                 volume_mounts = command_data.get('volume_mounts', command_data.get('additional_mounts', ''))
-                self.volume_mounts_entry.delete(0, tk.END)
+                self.volume_mounts_entry.delete(0, "end")
                 self.volume_mounts_entry.insert(0, volume_mounts)
             else:
-                self.docker_combo.config(state="disabled")
+                self.docker_combo.configure(state="disabled")
                 self.docker_combo.set('')
-                self.volume_mounts_entry.config(state="disabled")
-                self.volume_mounts_entry.delete(0, tk.END)
+                self.volume_mounts_entry.configure(state="disabled")
+                self.volume_mounts_entry.delete(0, "end")
     
     def on_name_change(self, event):
         """Handle name change"""
@@ -398,53 +441,17 @@ class CommandWallet:
     def clear_form(self):
         """Clear the form"""
         self.current_command_id = None
-        self.name_entry.delete(0, tk.END)
-        self.command_entry.delete(0, tk.END)
+        self.name_entry.delete(0, "end")
+        self.command_entry.delete(0, "end")
         self.conda_var.set(False)
         self.docker_var.set(False)
-        self.conda_combo.config(state="disabled")
-        self.docker_combo.config(state="disabled")
-        self.volume_mounts_entry.config(state="disabled")
-        self.volume_mounts_entry.delete(0, tk.END)
-        self.output_text.config(state=tk.NORMAL)
-        self.output_text.delete(1.0, tk.END)
-        self.output_text.config(state=tk.DISABLED)
-    
-    def get_command_tooltip_text(self, event):
-        """Get tooltip text for command at mouse position"""
-        try:
-            # Get the index of the item under the mouse
-            index = self.commands_listbox.nearest(event.y)
-            if index < 0 or index >= self.commands_listbox.size():
-                return None
-            
-            # Get command name from listbox
-            command_name = self.commands_listbox.get(index)
-            
-            # Find the command data by name (since list might be sorted)
-            command_data = None
-            for cmd_id, cmd_data in self.commands.items():
-                if cmd_data['name'] == command_name:
-                    command_data = cmd_data
-                    break
-            
-            if not command_data:
-                return None
-            
-            # Get last execution info
-            last_exec = command_data.get('last_execution')
-            if last_exec:
-                # Convert from storage format to display format
-                try:
-                    dt = datetime.strptime(last_exec, "%Y-%m-%d %H:%M:%S")
-                    formatted_date = dt.strftime("%d/%m/%Y %H:%M:%S")
-                    return f"Last executed: {formatted_date}"
-                except:
-                    return f"Last executed: {last_exec}"
-            else:
-                return "Never executed"
-        except:
-            return None
+        self.conda_combo.configure(state="disabled")
+        self.docker_combo.configure(state="disabled")
+        self.volume_mounts_entry.configure(state="disabled")
+        self.volume_mounts_entry.delete(0, "end")
+        self.output_text.configure(state="normal")
+        self.output_text.delete("1.0", "end")
+        self.output_text.configure(state="disabled")
     
     def save_command_data(self):
         """Save current command data"""
@@ -486,13 +493,13 @@ class CommandWallet:
         final_command = self.prepare_command(command_data)
         
         # Clear output and add starting message
-        self.output_text.config(state=tk.NORMAL)
-        self.output_text.delete(1.0, tk.END)
-        self.output_text.insert(tk.END, f"Started command '{final_command}' at {timestamp_str}\n\n")
-        self.output_text.config(state=tk.DISABLED)
+        self.output_text.configure(state="normal")
+        self.output_text.delete("1.0", "end")
+        self.output_text.insert("end", f"Started command '{final_command}' at {timestamp_str}\n\n")
+        self.output_text.configure(state="disabled")
         
         # Disable run button
-        self.run_button.config(state="disabled")
+        self.run_button.configure(state="disabled")
         
         # Run command in separate thread
         thread = threading.Thread(target=self.execute_command, args=(final_command,))
@@ -561,15 +568,15 @@ class CommandWallet:
             self.update_output(f"\nError executing command: {str(e)}\n")
         finally:
             # Re-enable run button
-            self.root.after(0, lambda: self.run_button.config(state="normal"))
+            self.root.after(0, lambda: self.run_button.configure(state="normal"))
     
     def update_output(self, text):
         """Update output text widget"""
         def update():
-            self.output_text.config(state=tk.NORMAL)
-            self.output_text.insert(tk.END, text)
-            self.output_text.see(tk.END)
-            self.output_text.config(state=tk.DISABLED)
+            self.output_text.configure(state="normal")
+            self.output_text.insert("end", text)
+            self.output_text.see("end")
+            self.output_text.configure(state="disabled")
         
         self.root.after(0, update)
     
@@ -704,7 +711,7 @@ class CommandWallet:
             
             # Update the volume mounts field
             mounts_str = ' '.join(all_mounts)
-            self.volume_mounts_entry.delete(0, tk.END)
+            self.volume_mounts_entry.delete(0, "end")
             self.volume_mounts_entry.insert(0, mounts_str)
     
     def on_command_change(self, event):
@@ -810,125 +817,116 @@ class CommandWallet:
 
     def show_config_dialog(self):
         """Show configuration dialog"""
-        config_window = tk.Toplevel(self.root)
+        config_window = ctk.CTkToplevel(self.root)
         config_window.title("Configuration")
-        config_window.geometry("500x300")
+        config_window.geometry("500x400")
         config_window.transient(self.root)
-        config_window.grab_set()
+        
+    def show_config_dialog(self):
+        """Show configuration dialog"""
+        config_window = ctk.CTkToplevel(self.root)
+        config_window.title("Configuration")
+        config_window.geometry("600x500")
+        config_window.transient(self.root)
+        
+        # Wait for window to be fully created before grabbing focus
+        config_window.after(100, lambda: config_window.grab_set())
         
         # Fixed docker mounts section
-        ttk.Label(config_window, text="Fixed Docker Mounts:", font=("Arial", 10, "bold")).pack(pady=(10, 5))
+        ctk.CTkLabel(config_window, text="Fixed Docker Mounts:", font=ctk.CTkFont(size=16, weight="bold")).pack(pady=(20, 10))
         
         # Frame for mounts list
-        mounts_frame = ttk.Frame(config_window)
-        mounts_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        mounts_frame = ctk.CTkFrame(config_window)
+        mounts_frame.pack(fill="both", expand=True, padx=20, pady=10)
         
-        # Listbox for mounts
-        mounts_listbox = tk.Listbox(mounts_frame)
-        mounts_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        # Scrollable frame for mounts (CustomTkinter doesn't have Listbox)
+        mounts_scrollable = ctk.CTkScrollableFrame(mounts_frame, label_text="Current Mounts")
+        mounts_scrollable.pack(fill="both", expand=True, padx=10, pady=10)
         
-        # Scrollbar for listbox
-        scrollbar = ttk.Scrollbar(mounts_frame, orient=tk.VERTICAL, command=mounts_listbox.yview)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        mounts_listbox.config(yscrollcommand=scrollbar.set)
+        # Store mount data and widgets
+        mount_vars = []
+        mount_frames = []
         
-        # Load current fixed mounts
-        for mount in self.config.get('fixed_docker_mounts', []):
-            mounts_listbox.insert(tk.END, mount)
+        def refresh_mounts():
+            # Clear existing widgets
+            for frame in mount_frames:
+                frame.destroy()
+            mount_frames.clear()
+            mount_vars.clear()
+            
+            # Add current mounts with delete buttons
+            for i, mount in enumerate(self.config.get('fixed_docker_mounts', [])):
+                mount_frame = ctk.CTkFrame(mounts_scrollable)
+                mount_frame.pack(fill="x", padx=5, pady=2)
+                mount_frames.append(mount_frame)
+                
+                # Mount text
+                mount_label = ctk.CTkLabel(mount_frame, text=mount, anchor="w")
+                mount_label.pack(side="left", fill="x", expand=True, padx=(10, 5), pady=5)
+                
+                # Delete button
+                def make_delete_command(index):
+                    return lambda: delete_mount(index)
+                
+                delete_btn = ctk.CTkButton(mount_frame, text="✕", width=30, height=25, 
+                                         command=make_delete_command(i), fg_color="red", hover_color="darkred")
+                delete_btn.pack(side="right", padx=(5, 10), pady=5)
+        
+        def delete_mount(index):
+            if 0 <= index < len(self.config.get('fixed_docker_mounts', [])):
+                self.config['fixed_docker_mounts'].pop(index)
+                refresh_mounts()
+        
+        refresh_mounts()
         
         # Entry for new mount
-        entry_frame = ttk.Frame(config_window)
-        entry_frame.pack(fill=tk.X, padx=10, pady=5)
+        entry_frame = ctk.CTkFrame(config_window)
+        entry_frame.pack(fill="x", padx=20, pady=10)
         
-        ttk.Label(entry_frame, text="Add mount:").pack(side=tk.LEFT)
-        mount_entry = ttk.Entry(entry_frame)
-        mount_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(5, 0))
-        mount_entry.insert(0, "-v /path/on/host:/path/in/container")
+        ctk.CTkLabel(entry_frame, text="Add new mount:", font=ctk.CTkFont(size=12)).pack(anchor="w", padx=10, pady=(10, 5))
+        
+        mount_entry_frame = ctk.CTkFrame(entry_frame)
+        mount_entry_frame.pack(fill="x", padx=10, pady=(0, 10))
+        
+        mount_entry = ctk.CTkEntry(mount_entry_frame, placeholder_text="-v /host/path:/container/path")
+        mount_entry.pack(side="left", fill="x", expand=True, padx=(10, 5), pady=10)
+        
+        add_button = ctk.CTkButton(mount_entry_frame, text="Add", width=60, command=lambda: add_mount())
+        add_button.pack(side="right", padx=(5, 10), pady=10)
         
         # Buttons frame
-        buttons_frame = ttk.Frame(config_window)
-        buttons_frame.pack(fill=tk.X, padx=10, pady=10)
+        buttons_frame = ctk.CTkFrame(config_window)
+        buttons_frame.pack(fill="x", padx=20, pady=(0, 20))
         
         def add_mount():
             mount = mount_entry.get().strip()
             if mount:
-                mounts_listbox.insert(tk.END, mount)
-                mount_entry.delete(0, tk.END)
-                mount_entry.insert(0, "-v /path/on/host:/path/in/container")
-        
-        def remove_mount():
-            selection = mounts_listbox.curselection()
-            if selection:
-                mounts_listbox.delete(selection[0])
+                if 'fixed_docker_mounts' not in self.config:
+                    self.config['fixed_docker_mounts'] = []
+                self.config['fixed_docker_mounts'].append(mount)
+                mount_entry.delete(0, "end")
+                refresh_mounts()
         
         def save_and_close():
-            # Save fixed mounts
-            fixed_mounts = []
-            for i in range(mounts_listbox.size()):
-                fixed_mounts.append(mounts_listbox.get(i))
-            
-            self.config['fixed_docker_mounts'] = fixed_mounts
             self.save_config()
             config_window.destroy()
         
-        ttk.Button(buttons_frame, text="Add", command=add_mount).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(buttons_frame, text="Remove", command=remove_mount).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(buttons_frame, text="Save & Close", command=save_and_close).pack(side=tk.RIGHT)
+        def cancel():
+            config_window.destroy()
         
+        # Control buttons
+        ctk.CTkButton(buttons_frame, text="Save & Close", command=save_and_close).pack(side="right", padx=(5, 10), pady=10)
+        ctk.CTkButton(buttons_frame, text="Cancel", command=cancel, fg_color="gray", hover_color="darkgray").pack(side="right", padx=(5, 5), pady=10)
+        
+        # Bind Enter key to add mount
         mount_entry.bind('<Return>', lambda e: add_mount())
-
-
-class ToolTip:
-    """Simple tooltip class for tkinter widgets"""
-    def __init__(self, widget, text_func):
-        self.widget = widget
-        self.text_func = text_func
-        self.tooltip_window = None
-        self.widget.bind("<Enter>", self.on_enter)
-        self.widget.bind("<Leave>", self.on_leave)
-        self.widget.bind("<Motion>", self.on_motion)
-    
-    def on_enter(self, event):
-        self.show_tooltip(event)
-    
-    def on_leave(self, event):
-        self.hide_tooltip()
-    
-    def on_motion(self, event):
-        if self.tooltip_window:
-            self.hide_tooltip()
-        self.show_tooltip(event)
-    
-    def show_tooltip(self, event):
-        text = self.text_func(event)
-        if not text:
-            return
         
-        x = event.x_root + 10
-        y = event.y_root + 10
-        
-        self.tooltip_window = tk.Toplevel(self.widget)
-        self.tooltip_window.wm_overrideredirect(True)
-        self.tooltip_window.wm_geometry(f"+{x}+{y}")
-        
-        label = tk.Label(
-            self.tooltip_window,
-            text=text,
-            background="lightyellow",
-            relief="solid",
-            borderwidth=1,
-            font=("DejaVu Sans Mono", 9)
-        )
-        label.pack()
-    
-    def hide_tooltip(self):
-        if self.tooltip_window:
-            self.tooltip_window.destroy()
-            self.tooltip_window = None
+        # Focus on entry field
+        config_window.after(200, lambda: mount_entry.focus())
 
 
 def main():
-    root = tk.Tk()
+    root = ctk.CTk()
     app = CommandWallet(root)
     root.protocol("WM_DELETE_WINDOW", app.on_closing)
     root.mainloop()

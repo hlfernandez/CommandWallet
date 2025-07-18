@@ -1,12 +1,12 @@
 # CommandWallet
 
-A clean and user-friendly desktop application for managing and executing recurrent CLI commands with support for Conda environments and Docker containers.
+A modern and user-friendly desktop application for managing and executing recurrent CLI commands with support for Conda environments and Docker containers.
 
 ![image](screenshot.png)
 
 ## Features
 
-- **Clean GUI Interface**: Intuitive tkinter-based interface with command selection panel
+- **Modern CustomTkinter UI**: Beautiful, modern interface with dark theme and enhanced visual appeal
 - **Command Management**: Create, edit, and delete commands with custom names
 - **Conda Environment Support**: Run commands in specific Conda environments with searchable dropdown
 - **Docker Container Support**: Execute commands inside Docker containers with:
@@ -15,7 +15,7 @@ A clean and user-friendly desktop application for managing and executing recurre
   - Unified volume mounts field with auto-inference and manual editing
 - **Searchable Dropdowns**: Type to filter Conda environments and Docker images
 - **Real-time Output**: View command execution results in real-time with timestamps
-- **Monospaced Fonts**: Better readability with larger monospaced fonts throughout the interface
+- **Modern Typography**: Clean, readable fonts with proper sizing for optimal user experience
 - **Command Sorting**: Sort commands by name or last execution date with proper handling of never-executed commands
 - **Execution Tracking**: Last execution date is saved and displayed via tooltips in command list
 - **Auto-save**: All changes in the GUI are automatically saved to configuration files
@@ -27,7 +27,7 @@ A clean and user-friendly desktop application for managing and executing recurre
 
 The application features:
 - **Left Panel**: Command selection with sorting options (by name/date) and management buttons
-- **Right Panel**: Command editor with compact layout and monospaced input fields
+- **Right Panel**: Command editor with modern CustomTkinter widgets and clean layout
 - **Execution Options**: Checkboxes for Conda/Docker with searchable dropdown menus
 - **Volume Mounts**: Unified field for Docker volume mounts with auto-inference
 - **Output Area**: Real-time command output with starting timestamp and monospaced font
@@ -36,7 +36,7 @@ The application features:
 ## Requirements
 
 - Python 3.6 or higher
-- tkinter (usually included with Python)
+- **CustomTkinter**: Modern tkinter replacement for enhanced UI (automatically installed via conda environment)
 - Standard library modules: subprocess, threading, json, os
 
 ### Optional Dependencies
@@ -46,6 +46,22 @@ The application features:
 
 ## Installation
 
+Using Conda (Recommended):
+1. Clone or download the repository
+2. Create the conda environment:
+   ```bash
+   conda env create -f environment.yml
+   ```
+3. Activate the environment:
+   ```bash
+   conda activate commandwallet
+   ```
+4. Launch the application:
+   ```bash
+   python command_wallet.py
+   ```
+
+Manual Installation:
 1. Clone or download the repository
 2. Run the setup checker:
    ```bash
