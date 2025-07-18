@@ -16,8 +16,8 @@ A clean and user-friendly desktop application for managing and executing recurre
 - **Searchable Dropdowns**: Type to filter Conda environments and Docker images
 - **Real-time Output**: View command execution results in real-time with timestamps
 - **Monospaced Fonts**: Better readability with larger monospaced fonts throughout the interface
-- **Command Sorting**: Sort commands by name or last execution date
-- **Execution Tracking**: Last execution date is saved and displayed in command list
+- **Command Sorting**: Sort commands by name or last execution date with proper handling of never-executed commands
+- **Execution Tracking**: Last execution date is saved and displayed via tooltips in command list
 - **Auto-save**: All changes in the GUI are automatically saved to configuration files
 - **Persistent Storage**: Commands and configuration automatically saved in `~/.command-wallet/`
 - **Threading**: Non-blocking command execution to keep the GUI responsive
@@ -103,9 +103,10 @@ Click the "Config" button to access:
 
 - **Select**: Click on a command in the left panel to load it
 - **Sort**: Use "Sort by Name" or "Sort by Date" buttons to organize your commands
+- **Tooltips**: Hover over command names to see last execution date
 - **Edit**: Modify the name, command, or execution options
 - **Delete**: Select a command and click "Delete"
-- **Execution History**: Commands show when they were last executed and can be sorted by date
+- **Execution History**: Commands show when they were last executed via tooltips
 - **Auto-save**: Changes are automatically saved
 
 ## Data Storage

@@ -106,6 +106,9 @@ class CommandWallet:
         self.commands_listbox.grid(row=2, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         self.commands_listbox.bind('<<ListboxSelect>>', self.on_command_select)
         
+        # Add tooltip for showing last execution dates
+        self.command_tooltip = ToolTip(self.commands_listbox, self.get_command_tooltip_text)
+        
         # Add/Delete buttons frame
         buttons_frame = ttk.Frame(left_frame)
         buttons_frame.grid(row=3, column=0, pady=(10, 0), sticky=(tk.W, tk.E))
@@ -310,9 +313,15 @@ class CommandWallet:
             sorted_commands = sorted(self.commands.items(), key=lambda item: item[1]['name'].lower())
         elif sort_by == 'date':
             # Sort by last execution date (most recent first), commands without date go to end
+            def get_sort_key(item):
+                last_exec = item[1].get('last_execution')
+                if last_exec is None:
+                    return '1970-01-01 00:00:00'  # Never executed commands go to end
+                return last_exec
+            
             sorted_commands = sorted(
                 self.commands.items(), 
-                key=lambda item: item[1].get('last_execution', '1970-01-01 00:00:00'),
+                key=get_sort_key,
                 reverse=True
             )
         else:
@@ -400,6 +409,42 @@ class CommandWallet:
         self.output_text.config(state=tk.NORMAL)
         self.output_text.delete(1.0, tk.END)
         self.output_text.config(state=tk.DISABLED)
+    
+    def get_command_tooltip_text(self, event):
+        """Get tooltip text for command at mouse position"""
+        try:
+            # Get the index of the item under the mouse
+            index = self.commands_listbox.nearest(event.y)
+            if index < 0 or index >= self.commands_listbox.size():
+                return None
+            
+            # Get command name from listbox
+            command_name = self.commands_listbox.get(index)
+            
+            # Find the command data by name (since list might be sorted)
+            command_data = None
+            for cmd_id, cmd_data in self.commands.items():
+                if cmd_data['name'] == command_name:
+                    command_data = cmd_data
+                    break
+            
+            if not command_data:
+                return None
+            
+            # Get last execution info
+            last_exec = command_data.get('last_execution')
+            if last_exec:
+                # Convert from storage format to display format
+                try:
+                    dt = datetime.strptime(last_exec, "%Y-%m-%d %H:%M:%S")
+                    formatted_date = dt.strftime("%d/%m/%Y %H:%M:%S")
+                    return f"Last executed: {formatted_date}"
+                except:
+                    return f"Last executed: {last_exec}"
+            else:
+                return "Never executed"
+        except:
+            return None
     
     def save_command_data(self):
         """Save current command data"""
@@ -831,6 +876,55 @@ class CommandWallet:
         ttk.Button(buttons_frame, text="Save & Close", command=save_and_close).pack(side=tk.RIGHT)
         
         mount_entry.bind('<Return>', lambda e: add_mount())
+
+
+class ToolTip:
+    """Simple tooltip class for tkinter widgets"""
+    def __init__(self, widget, text_func):
+        self.widget = widget
+        self.text_func = text_func
+        self.tooltip_window = None
+        self.widget.bind("<Enter>", self.on_enter)
+        self.widget.bind("<Leave>", self.on_leave)
+        self.widget.bind("<Motion>", self.on_motion)
+    
+    def on_enter(self, event):
+        self.show_tooltip(event)
+    
+    def on_leave(self, event):
+        self.hide_tooltip()
+    
+    def on_motion(self, event):
+        if self.tooltip_window:
+            self.hide_tooltip()
+        self.show_tooltip(event)
+    
+    def show_tooltip(self, event):
+        text = self.text_func(event)
+        if not text:
+            return
+        
+        x = event.x_root + 10
+        y = event.y_root + 10
+        
+        self.tooltip_window = tk.Toplevel(self.widget)
+        self.tooltip_window.wm_overrideredirect(True)
+        self.tooltip_window.wm_geometry(f"+{x}+{y}")
+        
+        label = tk.Label(
+            self.tooltip_window,
+            text=text,
+            background="lightyellow",
+            relief="solid",
+            borderwidth=1,
+            font=("DejaVu Sans Mono", 9)
+        )
+        label.pack()
+    
+    def hide_tooltip(self):
+        if self.tooltip_window:
+            self.tooltip_window.destroy()
+            self.tooltip_window = None
 
 
 def main():

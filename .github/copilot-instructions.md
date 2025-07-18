@@ -22,7 +22,8 @@ This is a Python desktop application called CommandWallet that provides a GUI fo
   - Unified volume mounts field for manual editing
 - Real-time output display with execution timestamps and monospaced font
 - Command execution history tracking with last execution date storage
-- Command sorting by name or last execution date
+- Command sorting by name or last execution date with proper handling of never-executed commands
+- Tooltips showing last execution dates when hovering over command names
 - Persistent command storage in JSON format with auto-save on all changes
 - Full-screen application startup
 - Auto-save functionality for all GUI changes (name, command, execution options, volume mounts)
