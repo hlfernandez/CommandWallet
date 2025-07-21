@@ -1,4 +1,4 @@
-# CommandWallet
+# ![image](logo.png) CommandWallet
 
 🚀 A modern and user-friendly desktop application for managing and executing recurrent CLI commands with support for Conda environments and Docker containers.
 
