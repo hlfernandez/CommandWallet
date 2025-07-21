@@ -700,8 +700,7 @@ class CommandWallet:
             if os.path.exists(self.data_file):
                 with open(self.data_file, 'r') as f:
                     self.commands = json.load(f)
-                # Migrate old data format if necessary
-                self.migrate_command_data()
+                self.ensure_command_data_schema()
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load commands: {str(e)}")
             self.commands = {}
@@ -871,39 +870,14 @@ class CommandWallet:
         if self.docker_combo['state'] == 'normal':
             self.docker_combo['values'] = self.docker_images
     
-    def migrate_command_data(self):
-        """Migrate old command data to new format"""
+    def ensure_command_data_schema(self):
         for command_id, command_data in self.commands.items():
-            # Migrate from 'docker_mounts' to 'volume_mounts'
-            if 'docker_mounts' in command_data:
-                docker_mounts = command_data.get('docker_mounts', '')
-                home_mount = f"-v {os.path.expanduser('~')}:{os.path.expanduser('~')}"
-                
-                if docker_mounts == home_mount:
-                    command_data['volume_mounts'] = ''
-                else:
-                    command_data['volume_mounts'] = docker_mounts
-                
-                # Remove old field
-                del command_data['docker_mounts']
-            
-            # Migrate from 'additional_mounts' to 'volume_mounts'
-            elif 'additional_mounts' in command_data:
-                command_data['volume_mounts'] = command_data.get('additional_mounts', '')
-                # Remove old field
-                del command_data['additional_mounts']
-            
-            # Ensure volume_mounts field exists
             if 'volume_mounts' not in command_data:
                 command_data['volume_mounts'] = ''
-            
-            # Ensure last_execution field exists
             if 'last_execution' not in command_data:
                 command_data['last_execution'] = None
-        
-        # Save migrated data
         self.save_commands()
-    
+
     def load_config(self) -> Dict:
         """Load configuration from JSON file"""
         default_config = {
