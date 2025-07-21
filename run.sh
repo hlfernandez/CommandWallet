@@ -2,4 +2,4 @@
 """
 Launch script for CommandWallet
 """
-python3 command_wallet.py
+python3 main.py

@@ -6,7 +6,7 @@
 			"type": "shell",
 			"command": "/home/hlfernandez/miniconda3/envs/commandwallet/bin/python",
 			"args": [
-				"command_wallet.py"
+				"main.py"
 			],
 			"group": "build",
 			"presentation": {
