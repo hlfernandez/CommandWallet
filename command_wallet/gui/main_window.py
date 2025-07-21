@@ -29,6 +29,7 @@ class CommandWalletWindow:
         
         self.root = ctk.CTk()
         self.root.title("CommandWallet")
+        self._set_window_icon()
         self._maximize_window()
         
         # Initialize core components
@@ -74,6 +75,46 @@ class CommandWalletWindow:
             except:
                 # If it fails, use large default size
                 self.root.geometry("1200x800")
+    
+    def _set_window_icon(self) -> None:
+        """Set the window icon using logo.png."""
+        try:
+            # Get the path to logo.png relative to the main project directory
+            # We need to go up two levels from gui module to reach the project root
+            current_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+            logo_path = os.path.join(current_dir, "logo.png")
+            
+            if os.path.exists(logo_path):
+                # CustomTkinter uses iconbitmap for setting window icons
+                # Convert to absolute path for reliability
+                logo_path = os.path.abspath(logo_path)
+                
+                # For cross-platform compatibility, we'll use different methods
+                system = platform.system()
+                if system == "Windows":
+                    # On Windows, try to use .ico format or convert PNG
+                    try:
+                        self.root.iconbitmap(logo_path)
+                    except:
+                        # If PNG doesn't work directly, try using PhotoImage
+                        try:
+                            import tkinter as tk
+                            photo = tk.PhotoImage(file=logo_path)
+                            self.root.iconphoto(False, photo)
+                        except Exception as e:
+                            print(f"Could not set window icon: {e}")
+                else:
+                    # On Linux and macOS, use iconphoto with PhotoImage
+                    try:
+                        import tkinter as tk
+                        photo = tk.PhotoImage(file=logo_path)
+                        self.root.iconphoto(False, photo)
+                    except Exception as e:
+                        print(f"Could not set window icon: {e}")
+            else:
+                print(f"Logo file not found at: {logo_path}")
+        except Exception as e:
+            print(f"Error setting window icon: {e}")
     
     def _load_data(self) -> None:
         """Load commands and configuration from storage."""
